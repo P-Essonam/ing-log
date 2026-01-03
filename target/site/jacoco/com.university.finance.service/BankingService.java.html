@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BankingService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Finance App Refactoring</a> &gt; <a href="index.source.html" class="el_package">com.university.finance.service</a> &gt; <span class="el_source">BankingService.java</span></div><h1>BankingService.java</h1><pre class="source lang-java linenums">package com.university.finance.service;
+
+import com.university.finance.config.ConfigurationManager;
+import com.university.finance.model.Account;
+import com.university.finance.model.Transaction;
+import com.university.finance.model.User;
+import com.university.finance.pattern.factory.AccountFactory;
+import com.university.finance.pattern.factory.UserFactory;
+import com.university.finance.pattern.observer.AuditLogger;
+import com.university.finance.pattern.observer.NotificationService;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * Service principal de gestion bancaire.
+ * Orchestre les opérations en utilisant les différents patterns implémentés.
+ */
+public class BankingService {
+
+    // Stockage des utilisateurs et comptes
+    private final Map&lt;String, User&gt; users;
+    private final Map&lt;String, Account&gt; accounts;
+
+    // Factories
+    private final UserFactory userFactory;
+    private final AccountFactory accountFactory;
+
+    // Service de transaction
+    private final TransactionService transactionService;
+
+    // Observers
+    private final AuditLogger auditLogger;
+    private final NotificationService notificationService;
+
+    // Configuration
+    private final ConfigurationManager config;
+
+    /**
+     * Constructeur par défaut.
+     * Initialise tous les composants avec les observers par défaut.
+     */
+<span class="fc" id="L45">    public BankingService() {</span>
+<span class="fc" id="L46">        this.users = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L47">        this.accounts = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L48">        this.userFactory = new UserFactory();</span>
+<span class="fc" id="L49">        this.accountFactory = new AccountFactory();</span>
+<span class="fc" id="L50">        this.transactionService = new TransactionService();</span>
+<span class="fc" id="L51">        this.config = ConfigurationManager.getInstance();</span>
+
+        // Initialiser les observers
+<span class="fc" id="L54">        this.auditLogger = new AuditLogger();</span>
+<span class="fc" id="L55">        this.notificationService = new NotificationService();</span>
+
+        // Enregistrer les observers si activés dans la configuration
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        if (config.isAuditEnabled()) {</span>
+<span class="fc" id="L59">            transactionService.addObserver(auditLogger);</span>
+        }
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">        if (config.isNotificationsEnabled()) {</span>
+<span class="fc" id="L62">            transactionService.addObserver(notificationService);</span>
+        }
+<span class="fc" id="L64">    }</span>
+
+    /**
+     * Constructeur avec observers personnalisés.
+     *
+     * @param auditLogger         Logger d'audit
+     * @param notificationService Service de notifications
+     */
+<span class="nc" id="L72">    public BankingService(AuditLogger auditLogger, NotificationService notificationService) {</span>
+<span class="nc" id="L73">        this.users = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L74">        this.accounts = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L75">        this.userFactory = new UserFactory();</span>
+<span class="nc" id="L76">        this.accountFactory = new AccountFactory();</span>
+<span class="nc" id="L77">        this.transactionService = new TransactionService();</span>
+<span class="nc" id="L78">        this.config = ConfigurationManager.getInstance();</span>
+
+<span class="nc" id="L80">        this.auditLogger = auditLogger;</span>
+<span class="nc" id="L81">        this.notificationService = notificationService;</span>
+
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (auditLogger != null) {</span>
+<span class="nc" id="L84">            transactionService.addObserver(auditLogger);</span>
+        }
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (notificationService != null) {</span>
+<span class="nc" id="L87">            transactionService.addObserver(notificationService);</span>
+        }
+<span class="nc" id="L89">    }</span>
+
+    // ==================== Gestion des Utilisateurs ====================
+
+    /**
+     * Crée un nouvel utilisateur.
+     *
+     * @param username Nom d'utilisateur
+     * @param password Mot de passe
+     * @param email    Adresse email
+     * @return L'utilisateur créé
+     * @throws IllegalArgumentException si les données sont invalides ou l'utilisateur existe
+     */
+    public User createUser(String username, String password, String email) {
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (findUserByUsername(username) != null) {</span>
+<span class="fc" id="L104">            throw new IllegalArgumentException(&quot;Un utilisateur avec ce nom existe déjà&quot;);</span>
+        }
+
+<span class="fc" id="L107">        User user = userFactory.createUser(username, password, email);</span>
+<span class="fc" id="L108">        users.put(user.getId(), user);</span>
+<span class="fc" id="L109">        return user;</span>
+    }
+
+    /**
+     * Trouve un utilisateur par son ID.
+     *
+     * @param userId ID de l'utilisateur
+     * @return L'utilisateur ou null
+     */
+    public User findUserById(String userId) {
+<span class="fc" id="L119">        return users.get(userId);</span>
+    }
+
+    /**
+     * Trouve un utilisateur par son nom d'utilisateur.
+     *
+     * @param username Nom d'utilisateur
+     * @return L'utilisateur ou null
+     */
+    public User findUserByUsername(String username) {
+<span class="fc" id="L129">        return users.values().stream()</span>
+<span class="fc" id="L130">                .filter(u -&gt; u.getUsername().equals(username))</span>
+<span class="fc" id="L131">                .findFirst()</span>
+<span class="fc" id="L132">                .orElse(null);</span>
+    }
+
+    /**
+     * Authentifie un utilisateur.
+     *
+     * @param username Nom d'utilisateur
+     * @param password Mot de passe
+     * @return L'utilisateur si l'authentification réussit, null sinon
+     */
+    public User authenticate(String username, String password) {
+<span class="fc" id="L143">        User user = findUserByUsername(username);</span>
+<span class="pc bpc" id="L144" title="1 of 4 branches missed.">        if (user != null &amp;&amp; user.checkPassword(password)) {</span>
+<span class="fc" id="L145">            return user;</span>
+        }
+<span class="fc" id="L147">        return null;</span>
+    }
+
+    /**
+     * Retourne tous les utilisateurs.
+     *
+     * @return Liste des utilisateurs
+     */
+    public List&lt;User&gt; getAllUsers() {
+<span class="fc" id="L156">        return List.copyOf(users.values());</span>
+    }
+
+    // ==================== Gestion des Comptes ====================
+
+    /**
+     * Crée un nouveau compte pour un utilisateur.
+     *
+     * @param user           Propriétaire du compte
+     * @param initialDeposit Dépôt initial
+     * @return Le compte créé
+     */
+    public Account createAccount(User user, double initialDeposit) {
+<span class="fc" id="L169">        Account account = accountFactory.createAccount(user, initialDeposit);</span>
+<span class="fc" id="L170">        accounts.put(account.getId(), account);</span>
+<span class="fc" id="L171">        return account;</span>
+    }
+
+    /**
+     * Crée un utilisateur et un compte associé en une seule opération.
+     *
+     * @param username       Nom d'utilisateur
+     * @param password       Mot de passe
+     * @param email          Adresse email
+     * @param initialDeposit Dépôt initial
+     * @return Le compte créé
+     */
+    public Account createUserWithAccount(String username, String password, 
+                                          String email, double initialDeposit) {
+<span class="fc" id="L185">        User user = createUser(username, password, email);</span>
+<span class="fc" id="L186">        return createAccount(user, initialDeposit);</span>
+    }
+
+    /**
+     * Trouve un compte par son ID.
+     *
+     * @param accountId ID du compte
+     * @return Le compte ou null
+     */
+    public Account findAccountById(String accountId) {
+<span class="fc" id="L196">        return accounts.get(accountId);</span>
+    }
+
+    /**
+     * Trouve les comptes d'un utilisateur.
+     *
+     * @param user Utilisateur
+     * @return Liste des comptes de l'utilisateur
+     */
+    public List&lt;Account&gt; findAccountsByUser(User user) {
+<span class="fc" id="L206">        return accounts.values().stream()</span>
+<span class="fc" id="L207">                .filter(a -&gt; a.getOwner().equals(user))</span>
+<span class="fc" id="L208">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Retourne le solde d'un compte.
+     *
+     * @param accountId ID du compte
+     * @return Solde du compte
+     * @throws IllegalArgumentException si le compte n'existe pas
+     */
+    public double getBalance(String accountId) {
+<span class="fc" id="L219">        Account account = findAccountById(accountId);</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">        if (account == null) {</span>
+<span class="fc" id="L221">            throw new IllegalArgumentException(&quot;Compte non trouvé: &quot; + accountId);</span>
+        }
+<span class="fc" id="L223">        return account.getBalance();</span>
+    }
+
+    /**
+     * Retourne tous les comptes.
+     *
+     * @return Liste des comptes
+     */
+    public List&lt;Account&gt; getAllAccounts() {
+<span class="fc" id="L232">        return List.copyOf(accounts.values());</span>
+    }
+
+    // ==================== Opérations Bancaires ====================
+
+    /**
+     * Effectue un dépôt sur un compte.
+     *
+     * @param accountId ID du compte
+     * @param amount    Montant à déposer
+     * @return La transaction créée
+     * @throws IllegalArgumentException si le compte n'existe pas
+     */
+    public Transaction deposit(String accountId, double amount) {
+<span class="fc" id="L246">        Account account = findAccountById(accountId);</span>
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">        if (account == null) {</span>
+<span class="nc" id="L248">            throw new IllegalArgumentException(&quot;Compte non trouvé: &quot; + accountId);</span>
+        }
+<span class="fc" id="L250">        return transactionService.deposit(account, amount);</span>
+    }
+
+    /**
+     * Effectue un retrait sur un compte.
+     *
+     * @param accountId ID du compte
+     * @param amount    Montant à retirer
+     * @return La transaction créée
+     * @throws IllegalArgumentException si le compte n'existe pas
+     */
+    public Transaction withdraw(String accountId, double amount) {
+<span class="fc" id="L262">        Account account = findAccountById(accountId);</span>
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">        if (account == null) {</span>
+<span class="nc" id="L264">            throw new IllegalArgumentException(&quot;Compte non trouvé: &quot; + accountId);</span>
+        }
+<span class="fc" id="L266">        return transactionService.withdraw(account, amount);</span>
+    }
+
+    /**
+     * Effectue un transfert entre deux comptes.
+     *
+     * @param fromAccountId ID du compte source
+     * @param toAccountId   ID du compte destination
+     * @param amount        Montant à transférer
+     * @return La transaction créée
+     * @throws IllegalArgumentException si un compte n'existe pas
+     */
+    public Transaction transfer(String fromAccountId, String toAccountId, double amount) {
+<span class="fc" id="L279">        Account fromAccount = findAccountById(fromAccountId);</span>
+<span class="fc" id="L280">        Account toAccount = findAccountById(toAccountId);</span>
+
+<span class="fc bfc" id="L282" title="All 2 branches covered.">        if (fromAccount == null) {</span>
+<span class="fc" id="L283">            throw new IllegalArgumentException(&quot;Compte source non trouvé: &quot; + fromAccountId);</span>
+        }
+<span class="pc bpc" id="L285" title="1 of 2 branches missed.">        if (toAccount == null) {</span>
+<span class="nc" id="L286">            throw new IllegalArgumentException(&quot;Compte destination non trouvé: &quot; + toAccountId);</span>
+        }
+
+        // Vérifier la limite de transfert
+<span class="pc bpc" id="L290" title="1 of 2 branches missed.">        if (amount &gt; config.getMaxTransfer()) {</span>
+<span class="nc" id="L291">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L292">                    &quot;Le montant dépasse la limite de transfert de &quot; + config.getMaxTransfer() + &quot;€&quot;</span>
+            );
+        }
+
+<span class="fc" id="L296">        return transactionService.transfer(fromAccount, toAccount, amount);</span>
+    }
+
+    /**
+     * Retourne l'historique des transactions d'un compte.
+     *
+     * @param accountId ID du compte
+     * @return Liste des transactions
+     * @throws IllegalArgumentException si le compte n'existe pas
+     */
+    public List&lt;Transaction&gt; getTransactionHistory(String accountId) {
+<span class="fc" id="L307">        Account account = findAccountById(accountId);</span>
+<span class="pc bpc" id="L308" title="1 of 2 branches missed.">        if (account == null) {</span>
+<span class="nc" id="L309">            throw new IllegalArgumentException(&quot;Compte non trouvé: &quot; + accountId);</span>
+        }
+<span class="fc" id="L311">        return account.getTransactions();</span>
+    }
+
+    // ==================== Getters pour les composants ====================
+
+    /**
+     * Retourne le service de transactions.
+     *
+     * @return Service de transactions
+     */
+    public TransactionService getTransactionService() {
+<span class="nc" id="L322">        return transactionService;</span>
+    }
+
+    /**
+     * Retourne le logger d'audit.
+     *
+     * @return Logger d'audit
+     */
+    public AuditLogger getAuditLogger() {
+<span class="nc" id="L331">        return auditLogger;</span>
+    }
+
+    /**
+     * Retourne le service de notifications.
+     *
+     * @return Service de notifications
+     */
+    public NotificationService getNotificationService() {
+<span class="nc" id="L340">        return notificationService;</span>
+    }
+
+    /**
+     * Retourne la factory d'utilisateurs.
+     *
+     * @return Factory d'utilisateurs
+     */
+    public UserFactory getUserFactory() {
+<span class="nc" id="L349">        return userFactory;</span>
+    }
+
+    /**
+     * Retourne la factory de comptes.
+     *
+     * @return Factory de comptes
+     */
+    public AccountFactory getAccountFactory() {
+<span class="nc" id="L358">        return accountFactory;</span>
+    }
+
+    /**
+     * Retourne le nombre d'utilisateurs.
+     *
+     * @return Nombre d'utilisateurs
+     */
+    public int getUserCount() {
+<span class="fc" id="L367">        return users.size();</span>
+    }
+
+    /**
+     * Retourne le nombre de comptes.
+     *
+     * @return Nombre de comptes
+     */
+    public int getAccountCount() {
+<span class="fc" id="L376">        return accounts.size();</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

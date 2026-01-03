@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConfigurationManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Finance App Refactoring</a> &gt; <a href="index.source.html" class="el_package">com.university.finance.config</a> &gt; <span class="el_source">ConfigurationManager.java</span></div><h1>ConfigurationManager.java</h1><pre class="source lang-java linenums">package com.university.finance.config;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
+/**
+ * Gestionnaire de configuration singleton.
+ * Implémente le pattern Singleton pour centraliser la configuration de l'application.
+ * Thread-safe avec initialisation paresseuse (lazy initialization).
+ */
+public class ConfigurationManager {
+
+    // Instance unique (volatile pour la visibilité entre threads)
+    private static volatile ConfigurationManager instance;
+
+    // Propriétés de configuration
+    private final Properties properties;
+
+    // Valeurs par défaut
+    private static final String DEFAULT_CURRENCY = &quot;EUR&quot;;
+    private static final double DEFAULT_MIN_BALANCE = 0.0;
+    private static final double DEFAULT_MAX_TRANSFER = 10000.0;
+    private static final boolean DEFAULT_NOTIFICATIONS_ENABLED = true;
+    private static final boolean DEFAULT_AUDIT_ENABLED = true;
+
+    /**
+     * Constructeur privé (pattern Singleton).
+     */
+<span class="fc" id="L31">    private ConfigurationManager() {</span>
+<span class="fc" id="L32">        this.properties = new Properties();</span>
+<span class="fc" id="L33">        loadDefaultConfiguration();</span>
+<span class="fc" id="L34">    }</span>
+
+    /**
+     * Retourne l'instance unique du gestionnaire de configuration.
+     * Utilise le pattern Double-Checked Locking pour la thread-safety.
+     *
+     * @return Instance unique de ConfigurationManager
+     */
+    public static ConfigurationManager getInstance() {
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (instance == null) {</span>
+<span class="fc" id="L44">            synchronized (ConfigurationManager.class) {</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">                if (instance == null) {</span>
+<span class="fc" id="L46">                    instance = new ConfigurationManager();</span>
+                }
+<span class="fc" id="L48">            }</span>
+        }
+<span class="fc" id="L50">        return instance;</span>
+    }
+
+    /**
+     * Charge la configuration par défaut.
+     */
+    private void loadDefaultConfiguration() {
+<span class="fc" id="L57">        properties.setProperty(&quot;app.name&quot;, &quot;Finance Refactoring App&quot;);</span>
+<span class="fc" id="L58">        properties.setProperty(&quot;app.version&quot;, &quot;1.0.0&quot;);</span>
+<span class="fc" id="L59">        properties.setProperty(&quot;currency&quot;, DEFAULT_CURRENCY);</span>
+<span class="fc" id="L60">        properties.setProperty(&quot;min.balance&quot;, String.valueOf(DEFAULT_MIN_BALANCE));</span>
+<span class="fc" id="L61">        properties.setProperty(&quot;max.transfer&quot;, String.valueOf(DEFAULT_MAX_TRANSFER));</span>
+<span class="fc" id="L62">        properties.setProperty(&quot;notifications.enabled&quot;, String.valueOf(DEFAULT_NOTIFICATIONS_ENABLED));</span>
+<span class="fc" id="L63">        properties.setProperty(&quot;audit.enabled&quot;, String.valueOf(DEFAULT_AUDIT_ENABLED));</span>
+<span class="fc" id="L64">        properties.setProperty(&quot;date.format&quot;, &quot;yyyy-MM-dd HH:mm:ss&quot;);</span>
+<span class="fc" id="L65">    }</span>
+
+    /**
+     * Charge la configuration depuis un fichier.
+     *
+     * @param filePath Chemin du fichier de configuration
+     * @throws IOException Si le fichier ne peut pas être lu
+     */
+    public void loadFromFile(String filePath) throws IOException {
+<span class="nc" id="L74">        try (InputStream input = new FileInputStream(filePath)) {</span>
+<span class="nc" id="L75">            properties.load(input);</span>
+        }
+<span class="nc" id="L77">    }</span>
+
+    /**
+     * Charge la configuration depuis le classpath.
+     *
+     * @param resourceName Nom de la ressource
+     * @throws IOException Si la ressource ne peut pas être lue
+     */
+    public void loadFromClasspath(String resourceName) throws IOException {
+<span class="nc" id="L86">        try (InputStream input = getClass().getClassLoader().getResourceAsStream(resourceName)) {</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">            if (input == null) {</span>
+<span class="nc" id="L88">                throw new IOException(&quot;Ressource non trouvée: &quot; + resourceName);</span>
+            }
+<span class="nc" id="L90">            properties.load(input);</span>
+        }
+<span class="nc" id="L92">    }</span>
+
+    // Getters pour les propriétés courantes
+
+    /**
+     * Retourne le nom de l'application.
+     *
+     * @return Nom de l'application
+     */
+    public String getAppName() {
+<span class="fc" id="L102">        return properties.getProperty(&quot;app.name&quot;);</span>
+    }
+
+    /**
+     * Retourne la version de l'application.
+     *
+     * @return Version de l'application
+     */
+    public String getAppVersion() {
+<span class="fc" id="L111">        return properties.getProperty(&quot;app.version&quot;);</span>
+    }
+
+    /**
+     * Retourne la devise utilisée.
+     *
+     * @return Code de la devise
+     */
+    public String getCurrency() {
+<span class="fc" id="L120">        return properties.getProperty(&quot;currency&quot;, DEFAULT_CURRENCY);</span>
+    }
+
+    /**
+     * Retourne le solde minimum autorisé.
+     *
+     * @return Solde minimum
+     */
+    public double getMinBalance() {
+<span class="fc" id="L129">        return Double.parseDouble(properties.getProperty(&quot;min.balance&quot;, </span>
+<span class="fc" id="L130">                String.valueOf(DEFAULT_MIN_BALANCE)));</span>
+    }
+
+    /**
+     * Retourne le montant maximum de transfert autorisé.
+     *
+     * @return Montant maximum
+     */
+    public double getMaxTransfer() {
+<span class="fc" id="L139">        return Double.parseDouble(properties.getProperty(&quot;max.transfer&quot;, </span>
+<span class="fc" id="L140">                String.valueOf(DEFAULT_MAX_TRANSFER)));</span>
+    }
+
+    /**
+     * Vérifie si les notifications sont activées.
+     *
+     * @return true si les notifications sont activées
+     */
+    public boolean isNotificationsEnabled() {
+<span class="fc" id="L149">        return Boolean.parseBoolean(properties.getProperty(&quot;notifications.enabled&quot;, </span>
+<span class="fc" id="L150">                String.valueOf(DEFAULT_NOTIFICATIONS_ENABLED)));</span>
+    }
+
+    /**
+     * Vérifie si l'audit est activé.
+     *
+     * @return true si l'audit est activé
+     */
+    public boolean isAuditEnabled() {
+<span class="fc" id="L159">        return Boolean.parseBoolean(properties.getProperty(&quot;audit.enabled&quot;, </span>
+<span class="fc" id="L160">                String.valueOf(DEFAULT_AUDIT_ENABLED)));</span>
+    }
+
+    /**
+     * Retourne le format de date configuré.
+     *
+     * @return Format de date
+     */
+    public String getDateFormat() {
+<span class="fc" id="L169">        return properties.getProperty(&quot;date.format&quot;, &quot;yyyy-MM-dd HH:mm:ss&quot;);</span>
+    }
+
+    // Getters/Setters génériques
+
+    /**
+     * Retourne une propriété par son nom.
+     *
+     * @param key Clé de la propriété
+     * @return Valeur de la propriété ou null
+     */
+    public String getProperty(String key) {
+<span class="fc" id="L181">        return properties.getProperty(key);</span>
+    }
+
+    /**
+     * Retourne une propriété avec une valeur par défaut.
+     *
+     * @param key          Clé de la propriété
+     * @param defaultValue Valeur par défaut
+     * @return Valeur de la propriété ou valeur par défaut
+     */
+    public String getProperty(String key, String defaultValue) {
+<span class="fc" id="L192">        return properties.getProperty(key, defaultValue);</span>
+    }
+
+    /**
+     * Définit une propriété.
+     *
+     * @param key   Clé de la propriété
+     * @param value Valeur de la propriété
+     */
+    public void setProperty(String key, String value) {
+<span class="fc" id="L202">        properties.setProperty(key, value);</span>
+<span class="fc" id="L203">    }</span>
+
+    /**
+     * Retourne une propriété sous forme d'entier.
+     *
+     * @param key          Clé de la propriété
+     * @param defaultValue Valeur par défaut
+     * @return Valeur entière
+     */
+    public int getIntProperty(String key, int defaultValue) {
+<span class="fc" id="L213">        String value = properties.getProperty(key);</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L215">            return defaultValue;</span>
+        }
+        try {
+<span class="fc" id="L218">            return Integer.parseInt(value);</span>
+<span class="fc" id="L219">        } catch (NumberFormatException e) {</span>
+<span class="fc" id="L220">            return defaultValue;</span>
+        }
+    }
+
+    /**
+     * Retourne une propriété sous forme de double.
+     *
+     * @param key          Clé de la propriété
+     * @param defaultValue Valeur par défaut
+     * @return Valeur double
+     */
+    public double getDoubleProperty(String key, double defaultValue) {
+<span class="fc" id="L232">        String value = properties.getProperty(key);</span>
+<span class="fc bfc" id="L233" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L234">            return defaultValue;</span>
+        }
+        try {
+<span class="fc" id="L237">            return Double.parseDouble(value);</span>
+<span class="nc" id="L238">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L239">            return defaultValue;</span>
+        }
+    }
+
+    /**
+     * Retourne une propriété sous forme de booléen.
+     *
+     * @param key          Clé de la propriété
+     * @param defaultValue Valeur par défaut
+     * @return Valeur booléenne
+     */
+    public boolean getBooleanProperty(String key, boolean defaultValue) {
+<span class="fc" id="L251">        String value = properties.getProperty(key);</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L253">            return defaultValue;</span>
+        }
+<span class="fc" id="L255">        return Boolean.parseBoolean(value);</span>
+    }
+
+    /**
+     * Réinitialise l'instance (pour les tests uniquement).
+     * Note: Cette méthode ne devrait pas être utilisée en production.
+     */
+    public static void resetInstance() {
+<span class="fc" id="L263">        synchronized (ConfigurationManager.class) {</span>
+<span class="fc" id="L264">            instance = null;</span>
+<span class="fc" id="L265">        }</span>
+<span class="fc" id="L266">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

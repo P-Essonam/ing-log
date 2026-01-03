@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Finance App Refactoring</a> &gt; <a href="index.source.html" class="el_package">com.university.finance.service</a> &gt; <span class="el_source">TransactionService.java</span></div><h1>TransactionService.java</h1><pre class="source lang-java linenums">package com.university.finance.service;
+
+import com.university.finance.model.Account;
+import com.university.finance.model.Transaction;
+import com.university.finance.pattern.observer.TransactionObserver;
+import com.university.finance.pattern.strategy.DepositStrategy;
+import com.university.finance.pattern.strategy.TransactionStrategy;
+import com.university.finance.pattern.strategy.TransferStrategy;
+import com.university.finance.pattern.strategy.WithdrawStrategy;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Service de gestion des transactions.
+ * Implémente le pattern Subject pour notifier les observers.
+ * Utilise les stratégies de transaction pour exécuter les opérations.
+ */
+public class TransactionService {
+
+    // Liste des observers (pattern Observer)
+    private final List&lt;TransactionObserver&gt; observers;
+
+    // Stratégies de transaction (pattern Strategy)
+    private final DepositStrategy depositStrategy;
+    private final WithdrawStrategy withdrawStrategy;
+    private final TransferStrategy transferStrategy;
+
+    /**
+     * Constructeur par défaut.
+     */
+<span class="fc" id="L32">    public TransactionService() {</span>
+<span class="fc" id="L33">        this.observers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L34">        this.depositStrategy = new DepositStrategy();</span>
+<span class="fc" id="L35">        this.withdrawStrategy = new WithdrawStrategy();</span>
+<span class="fc" id="L36">        this.transferStrategy = new TransferStrategy();</span>
+<span class="fc" id="L37">    }</span>
+
+    // ==================== Gestion des Observers ====================
+
+    /**
+     * Ajoute un observer pour les notifications de transactions.
+     *
+     * @param observer Observer à ajouter
+     */
+    public void addObserver(TransactionObserver observer) {
+<span class="pc bpc" id="L47" title="2 of 4 branches missed.">        if (observer != null &amp;&amp; !observers.contains(observer)) {</span>
+<span class="fc" id="L48">            observers.add(observer);</span>
+        }
+<span class="fc" id="L50">    }</span>
+
+    /**
+     * Supprime un observer.
+     *
+     * @param observer Observer à supprimer
+     */
+    public void removeObserver(TransactionObserver observer) {
+<span class="fc" id="L58">        observers.remove(observer);</span>
+<span class="fc" id="L59">    }</span>
+
+    /**
+     * Notifie tous les observers d'une transaction.
+     *
+     * @param transaction Transaction à notifier
+     */
+    private void notifyObservers(Transaction transaction) {
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        for (TransactionObserver observer : observers) {</span>
+            try {
+<span class="fc" id="L69">                observer.onTransaction(transaction);</span>
+<span class="nc" id="L70">            } catch (Exception e) {</span>
+<span class="nc" id="L71">                System.err.println(&quot;Erreur lors de la notification de l'observer &quot; </span>
+<span class="nc" id="L72">                        + observer.getName() + &quot;: &quot; + e.getMessage());</span>
+<span class="fc" id="L73">            }</span>
+<span class="fc" id="L74">        }</span>
+<span class="fc" id="L75">    }</span>
+
+    /**
+     * Retourne le nombre d'observers enregistrés.
+     *
+     * @return Nombre d'observers
+     */
+    public int getObserverCount() {
+<span class="fc" id="L83">        return observers.size();</span>
+    }
+
+    // ==================== Opérations de Transaction ====================
+
+    /**
+     * Effectue un dépôt sur un compte.
+     *
+     * @param account Compte sur lequel effectuer le dépôt
+     * @param amount  Montant à déposer
+     * @return La transaction créée, ou null si l'opération a échoué
+     */
+    public Transaction deposit(Account account, double amount) {
+<span class="fc" id="L96">        Transaction transaction = depositStrategy.execute(account, amount);</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (transaction != null) {</span>
+<span class="fc" id="L98">            notifyObservers(transaction);</span>
+        }
+<span class="fc" id="L100">        return transaction;</span>
+    }
+
+    /**
+     * Effectue un retrait sur un compte.
+     *
+     * @param account Compte sur lequel effectuer le retrait
+     * @param amount  Montant à retirer
+     * @return La transaction créée, ou null si l'opération a échoué
+     */
+    public Transaction withdraw(Account account, double amount) {
+<span class="fc" id="L111">        Transaction transaction = withdrawStrategy.execute(account, amount);</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (transaction != null) {</span>
+<span class="fc" id="L113">            notifyObservers(transaction);</span>
+        }
+<span class="fc" id="L115">        return transaction;</span>
+    }
+
+    /**
+     * Effectue un transfert entre deux comptes.
+     *
+     * @param fromAccount Compte source
+     * @param toAccount   Compte destination
+     * @param amount      Montant à transférer
+     * @return La transaction créée, ou null si l'opération a échoué
+     */
+    public Transaction transfer(Account fromAccount, Account toAccount, double amount) {
+<span class="fc" id="L127">        Transaction transaction = transferStrategy.execute(fromAccount, toAccount, amount);</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        if (transaction != null) {</span>
+<span class="fc" id="L129">            notifyObservers(transaction);</span>
+        }
+<span class="fc" id="L131">        return transaction;</span>
+    }
+
+    // ==================== Vérifications ====================
+
+    /**
+     * Vérifie si un dépôt peut être effectué.
+     *
+     * @param account Compte concerné
+     * @param amount  Montant du dépôt
+     * @return true si le dépôt est possible
+     */
+    public boolean canDeposit(Account account, double amount) {
+<span class="fc" id="L144">        return depositStrategy.canExecute(account, amount);</span>
+    }
+
+    /**
+     * Vérifie si un retrait peut être effectué.
+     *
+     * @param account Compte concerné
+     * @param amount  Montant du retrait
+     * @return true si le retrait est possible
+     */
+    public boolean canWithdraw(Account account, double amount) {
+<span class="fc" id="L155">        return withdrawStrategy.canExecute(account, amount);</span>
+    }
+
+    /**
+     * Vérifie si un transfert peut être effectué.
+     *
+     * @param fromAccount Compte source
+     * @param toAccount   Compte destination
+     * @param amount      Montant du transfert
+     * @return true si le transfert est possible
+     */
+    public boolean canTransfer(Account fromAccount, Account toAccount, double amount) {
+<span class="fc" id="L167">        return transferStrategy.canExecute(fromAccount, toAccount, amount);</span>
+    }
+
+    // ==================== Getters pour les stratégies ====================
+
+    /**
+     * Retourne la stratégie de dépôt.
+     *
+     * @return Stratégie de dépôt
+     */
+    public TransactionStrategy getDepositStrategy() {
+<span class="fc" id="L178">        return depositStrategy;</span>
+    }
+
+    /**
+     * Retourne la stratégie de retrait.
+     *
+     * @return Stratégie de retrait
+     */
+    public TransactionStrategy getWithdrawStrategy() {
+<span class="fc" id="L187">        return withdrawStrategy;</span>
+    }
+
+    /**
+     * Retourne la stratégie de transfert.
+     *
+     * @return Stratégie de transfert
+     */
+    public TransactionStrategy getTransferStrategy() {
+<span class="fc" id="L196">        return transferStrategy;</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

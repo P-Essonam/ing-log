@@ -1,0 +1,13 @@
+/app/src/test/java/com/university/finance/model/AccountTest.java
+/app/src/test/java/com/university/finance/service/TransactionServiceTest.java
+/app/src/test/java/com/university/finance/pattern/strategy/DepositStrategyTest.java
+/app/src/test/java/com/university/finance/config/ConfigurationManagerTest.java
+/app/src/test/java/com/university/finance/pattern/factory/AccountFactoryTest.java
+/app/src/test/java/com/university/finance/pattern/factory/UserFactoryTest.java
+/app/src/test/java/com/university/finance/pattern/observer/NotificationServiceTest.java
+/app/src/test/java/com/university/finance/pattern/observer/AuditLoggerTest.java
+/app/src/test/java/com/university/finance/pattern/strategy/TransferStrategyTest.java
+/app/src/test/java/com/university/finance/model/TransactionTest.java
+/app/src/test/java/com/university/finance/model/UserTest.java
+/app/src/test/java/com/university/finance/service/BankingServiceTest.java
+/app/src/test/java/com/university/finance/pattern/strategy/WithdrawStrategyTest.java

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Finance App Refactoring</a> &gt; <a href="index.source.html" class="el_package">com.university.finance.pattern.factory</a> &gt; <span class="el_source">UserFactory.java</span></div><h1>UserFactory.java</h1><pre class="source lang-java linenums">package com.university.finance.pattern.factory;
+
+import com.university.finance.model.User;
+
+import java.util.UUID;
+import java.util.regex.Pattern;
+
+/**
+ * Factory pour la création d'utilisateurs.
+ * Implémente le pattern Factory pour centraliser la création d'objets User
+ * avec validation des données.
+ */
+<span class="fc" id="L13">public class UserFactory {</span>
+
+    // Pattern pour valider l'email
+<span class="fc" id="L16">    private static final Pattern EMAIL_PATTERN = Pattern.compile(</span>
+            &quot;^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$&quot;
+    );
+
+    // Longueur minimale du mot de passe
+    private static final int MIN_PASSWORD_LENGTH = 4;
+
+    // Longueur minimale du nom d'utilisateur
+    private static final int MIN_USERNAME_LENGTH = 3;
+
+    /**
+     * Crée un nouvel utilisateur avec un ID généré automatiquement.
+     *
+     * @param username Nom d'utilisateur
+     * @param password Mot de passe
+     * @param email    Adresse email
+     * @return Le nouvel utilisateur créé
+     * @throws IllegalArgumentException si les données sont invalides
+     */
+    public User createUser(String username, String password, String email) {
+<span class="fc" id="L36">        validateUsername(username);</span>
+<span class="fc" id="L37">        validatePassword(password);</span>
+<span class="fc" id="L38">        validateEmail(email);</span>
+
+<span class="fc" id="L40">        String id = generateUserId();</span>
+<span class="fc" id="L41">        return new User(id, username, password, email);</span>
+    }
+
+    /**
+     * Crée un nouvel utilisateur avec un ID spécifique.
+     *
+     * @param id       Identifiant de l'utilisateur
+     * @param username Nom d'utilisateur
+     * @param password Mot de passe
+     * @param email    Adresse email
+     * @return Le nouvel utilisateur créé
+     * @throws IllegalArgumentException si les données sont invalides
+     */
+    public User createUser(String id, String username, String password, String email) {
+<span class="fc bfc" id="L55" title="All 4 branches covered.">        if (id == null || id.trim().isEmpty()) {</span>
+<span class="fc" id="L56">            throw new IllegalArgumentException(&quot;L'ID ne peut pas être vide&quot;);</span>
+        }
+<span class="fc" id="L58">        validateUsername(username);</span>
+<span class="fc" id="L59">        validatePassword(password);</span>
+<span class="fc" id="L60">        validateEmail(email);</span>
+
+<span class="fc" id="L62">        return new User(id, username, password, email);</span>
+    }
+
+    /**
+     * Crée un utilisateur avec des données minimales (sans email).
+     *
+     * @param username Nom d'utilisateur
+     * @param password Mot de passe
+     * @return Le nouvel utilisateur créé
+     */
+    public User createSimpleUser(String username, String password) {
+<span class="fc" id="L73">        validateUsername(username);</span>
+<span class="fc" id="L74">        validatePassword(password);</span>
+
+<span class="fc" id="L76">        String id = generateUserId();</span>
+<span class="fc" id="L77">        return new User(id, username, password, username + &quot;@default.com&quot;);</span>
+    }
+
+    /**
+     * Valide le nom d'utilisateur.
+     *
+     * @param username Nom d'utilisateur à valider
+     * @throws IllegalArgumentException si le nom d'utilisateur est invalide
+     */
+    private void validateUsername(String username) {
+<span class="fc bfc" id="L87" title="All 4 branches covered.">        if (username == null || username.trim().isEmpty()) {</span>
+<span class="fc" id="L88">            throw new IllegalArgumentException(&quot;Le nom d'utilisateur ne peut pas être vide&quot;);</span>
+        }
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        if (username.length() &lt; MIN_USERNAME_LENGTH) {</span>
+<span class="fc" id="L91">            throw new IllegalArgumentException(</span>
+                    &quot;Le nom d'utilisateur doit contenir au moins &quot; + MIN_USERNAME_LENGTH + &quot; caractères&quot;
+            );
+        }
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (!username.matches(&quot;^[a-zA-Z0-9_]+$&quot;)) {</span>
+<span class="fc" id="L96">            throw new IllegalArgumentException(</span>
+                    &quot;Le nom d'utilisateur ne peut contenir que des lettres, chiffres et underscores&quot;
+            );
+        }
+<span class="fc" id="L100">    }</span>
+
+    /**
+     * Valide le mot de passe.
+     *
+     * @param password Mot de passe à valider
+     * @throws IllegalArgumentException si le mot de passe est invalide
+     */
+    private void validatePassword(String password) {
+<span class="fc bfc" id="L109" title="All 4 branches covered.">        if (password == null || password.isEmpty()) {</span>
+<span class="fc" id="L110">            throw new IllegalArgumentException(&quot;Le mot de passe ne peut pas être vide&quot;);</span>
+        }
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (password.length() &lt; MIN_PASSWORD_LENGTH) {</span>
+<span class="fc" id="L113">            throw new IllegalArgumentException(</span>
+                    &quot;Le mot de passe doit contenir au moins &quot; + MIN_PASSWORD_LENGTH + &quot; caractères&quot;
+            );
+        }
+<span class="fc" id="L117">    }</span>
+
+    /**
+     * Valide l'adresse email.
+     *
+     * @param email Email à valider
+     * @throws IllegalArgumentException si l'email est invalide
+     */
+    private void validateEmail(String email) {
+<span class="pc bpc" id="L126" title="1 of 4 branches missed.">        if (email == null || email.trim().isEmpty()) {</span>
+<span class="fc" id="L127">            throw new IllegalArgumentException(&quot;L'email ne peut pas être vide&quot;);</span>
+        }
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (!EMAIL_PATTERN.matcher(email).matches()) {</span>
+<span class="fc" id="L130">            throw new IllegalArgumentException(&quot;Format d'email invalide&quot;);</span>
+        }
+<span class="fc" id="L132">    }</span>
+
+    /**
+     * Génère un identifiant unique pour l'utilisateur.
+     *
+     * @return Identifiant unique
+     */
+    private String generateUserId() {
+<span class="fc" id="L140">        return &quot;USR-&quot; + UUID.randomUUID().toString().substring(0, 8).toUpperCase();</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

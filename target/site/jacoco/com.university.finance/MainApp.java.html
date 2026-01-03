@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MainApp.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Finance App Refactoring</a> &gt; <a href="index.source.html" class="el_package">com.university.finance</a> &gt; <span class="el_source">MainApp.java</span></div><h1>MainApp.java</h1><pre class="source lang-java linenums">package com.university.finance;
+
+import com.university.finance.config.ConfigurationManager;
+import com.university.finance.model.Account;
+import com.university.finance.model.Transaction;
+import com.university.finance.model.User;
+import com.university.finance.service.BankingService;
+
+import java.util.List;
+import java.util.Scanner;
+
+/**
+ * Application principale du système bancaire.
+ * Version refactorisée utilisant les design patterns:
+ * - Strategy: pour les différents types de transactions
+ * - Factory: pour la création d'utilisateurs et comptes
+ * - Observer: pour les notifications et l'audit
+ * - Singleton: pour la configuration
+ */
+public class MainApp {
+
+    private final BankingService bankingService;
+    private final Scanner scanner;
+    private final ConfigurationManager config;
+
+    private User currentUser;
+    private Account currentAccount;
+
+    /**
+     * Constructeur de l'application.
+     */
+<span class="nc" id="L32">    public MainApp() {</span>
+<span class="nc" id="L33">        this.bankingService = new BankingService();</span>
+<span class="nc" id="L34">        this.scanner = new Scanner(System.in);</span>
+<span class="nc" id="L35">        this.config = ConfigurationManager.getInstance();</span>
+<span class="nc" id="L36">        this.currentUser = null;</span>
+<span class="nc" id="L37">        this.currentAccount = null;</span>
+
+        // Initialiser des données de démonstration
+<span class="nc" id="L40">        initializeDemoData();</span>
+<span class="nc" id="L41">    }</span>
+
+    /**
+     * Initialise des données de démonstration.
+     */
+    private void initializeDemoData() {
+        try {
+            // Créer des utilisateurs de démonstration
+<span class="nc" id="L49">            Account account1 = bankingService.createUserWithAccount(</span>
+                    &quot;user1&quot;, &quot;password1&quot;, &quot;user1@example.com&quot;, 1000.0);
+<span class="nc" id="L51">            Account account2 = bankingService.createUserWithAccount(</span>
+                    &quot;user2&quot;, &quot;password2&quot;, &quot;user2@example.com&quot;, 500.0);
+
+<span class="nc" id="L54">            System.out.println(&quot;Données de démonstration créées:&quot;);</span>
+<span class="nc" id="L55">            System.out.println(&quot;  - &quot; + account1.getOwner().getUsername() + </span>
+<span class="nc" id="L56">                    &quot; (Compte: &quot; + account1.getId() + &quot;, Solde: &quot; + account1.getBalance() + &quot;€)&quot;);</span>
+<span class="nc" id="L57">            System.out.println(&quot;  - &quot; + account2.getOwner().getUsername() + </span>
+<span class="nc" id="L58">                    &quot; (Compte: &quot; + account2.getId() + &quot;, Solde: &quot; + account2.getBalance() + &quot;€)&quot;);</span>
+<span class="nc" id="L59">            System.out.println();</span>
+<span class="nc" id="L60">        } catch (Exception e) {</span>
+<span class="nc" id="L61">            System.err.println(&quot;Erreur lors de l'initialisation: &quot; + e.getMessage());</span>
+<span class="nc" id="L62">        }</span>
+<span class="nc" id="L63">    }</span>
+
+    /**
+     * Démarre l'application.
+     */
+    public void start() {
+<span class="nc" id="L69">        printWelcome();</span>
+<span class="nc" id="L70">        boolean running = true;</span>
+
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        while (running) {</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            if (currentUser == null) {</span>
+<span class="nc" id="L74">                running = showLoginMenu();</span>
+            } else {
+<span class="nc" id="L76">                running = showMainMenu();</span>
+            }
+        }
+
+<span class="nc" id="L80">        cleanup();</span>
+<span class="nc" id="L81">        System.out.println(&quot;Au revoir!&quot;);</span>
+<span class="nc" id="L82">    }</span>
+
+    /**
+     * Affiche le message de bienvenue.
+     */
+    private void printWelcome() {
+<span class="nc" id="L88">        System.out.println(&quot;╔══════════════════════════════════════════╗&quot;);</span>
+<span class="nc" id="L89">        System.out.println(&quot;║    &quot; + config.getAppName() + &quot;    ║&quot;);</span>
+<span class="nc" id="L90">        System.out.println(&quot;║           Version &quot; + config.getAppVersion() + &quot;              ║&quot;);</span>
+<span class="nc" id="L91">        System.out.println(&quot;╚══════════════════════════════════════════╝&quot;);</span>
+<span class="nc" id="L92">        System.out.println();</span>
+<span class="nc" id="L93">    }</span>
+
+    /**
+     * Affiche le menu de connexion.
+     *
+     * @return false si l'utilisateur veut quitter
+     */
+    private boolean showLoginMenu() {
+<span class="nc" id="L101">        System.out.println(&quot;=== Menu de Connexion ===&quot;);</span>
+<span class="nc" id="L102">        System.out.println(&quot;1. Se connecter&quot;);</span>
+<span class="nc" id="L103">        System.out.println(&quot;2. Créer un compte&quot;);</span>
+<span class="nc" id="L104">        System.out.println(&quot;0. Quitter&quot;);</span>
+<span class="nc" id="L105">        System.out.print(&quot;Choix: &quot;);</span>
+
+<span class="nc" id="L107">        int choice = readInt();</span>
+
+<span class="nc bnc" id="L109" title="All 4 branches missed.">        switch (choice) {</span>
+            case 1:
+<span class="nc" id="L111">                login();</span>
+<span class="nc" id="L112">                break;</span>
+            case 2:
+<span class="nc" id="L114">                register();</span>
+<span class="nc" id="L115">                break;</span>
+            case 0:
+<span class="nc" id="L117">                return false;</span>
+            default:
+<span class="nc" id="L119">                System.out.println(&quot;Choix invalide!&quot;);</span>
+        }
+<span class="nc" id="L121">        System.out.println();</span>
+<span class="nc" id="L122">        return true;</span>
+    }
+
+    /**
+     * Affiche le menu principal.
+     *
+     * @return false si l'utilisateur veut quitter
+     */
+    private boolean showMainMenu() {
+<span class="nc" id="L131">        System.out.println(&quot;=== Système Bancaire ===&quot;);</span>
+<span class="nc" id="L132">        System.out.println(&quot;Utilisateur: &quot; + currentUser.getUsername());</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        if (currentAccount != null) {</span>
+<span class="nc" id="L134">            System.out.println(&quot;Compte actif: &quot; + currentAccount.getId() + </span>
+<span class="nc" id="L135">                    &quot; (Solde: &quot; + String.format(&quot;%.2f&quot;, currentAccount.getBalance()) + &quot;€)&quot;);</span>
+        }
+<span class="nc" id="L137">        System.out.println(&quot;------------------------&quot;);</span>
+<span class="nc" id="L138">        System.out.println(&quot;1. Afficher solde&quot;);</span>
+<span class="nc" id="L139">        System.out.println(&quot;2. Déposer argent&quot;);</span>
+<span class="nc" id="L140">        System.out.println(&quot;3. Retirer argent&quot;);</span>
+<span class="nc" id="L141">        System.out.println(&quot;4. Transfert&quot;);</span>
+<span class="nc" id="L142">        System.out.println(&quot;5. Historique des transactions&quot;);</span>
+<span class="nc" id="L143">        System.out.println(&quot;6. Changer de compte&quot;);</span>
+<span class="nc" id="L144">        System.out.println(&quot;7. Créer un nouveau compte&quot;);</span>
+<span class="nc" id="L145">        System.out.println(&quot;8. Se déconnecter&quot;);</span>
+<span class="nc" id="L146">        System.out.println(&quot;0. Quitter&quot;);</span>
+<span class="nc" id="L147">        System.out.print(&quot;Choix: &quot;);</span>
+
+<span class="nc" id="L149">        int choice = readInt();</span>
+
+<span class="nc bnc" id="L151" title="All 10 branches missed.">        switch (choice) {</span>
+            case 1:
+<span class="nc" id="L153">                showBalance();</span>
+<span class="nc" id="L154">                break;</span>
+            case 2:
+<span class="nc" id="L156">                deposit();</span>
+<span class="nc" id="L157">                break;</span>
+            case 3:
+<span class="nc" id="L159">                withdraw();</span>
+<span class="nc" id="L160">                break;</span>
+            case 4:
+<span class="nc" id="L162">                transfer();</span>
+<span class="nc" id="L163">                break;</span>
+            case 5:
+<span class="nc" id="L165">                showHistory();</span>
+<span class="nc" id="L166">                break;</span>
+            case 6:
+<span class="nc" id="L168">                selectAccount();</span>
+<span class="nc" id="L169">                break;</span>
+            case 7:
+<span class="nc" id="L171">                createNewAccount();</span>
+<span class="nc" id="L172">                break;</span>
+            case 8:
+<span class="nc" id="L174">                logout();</span>
+<span class="nc" id="L175">                break;</span>
+            case 0:
+<span class="nc" id="L177">                return false;</span>
+            default:
+<span class="nc" id="L179">                System.out.println(&quot;Choix invalide!&quot;);</span>
+        }
+<span class="nc" id="L181">        System.out.println();</span>
+<span class="nc" id="L182">        return true;</span>
+    }
+
+    /**
+     * Connexion d'un utilisateur.
+     */
+    private void login() {
+<span class="nc" id="L189">        System.out.print(&quot;Nom d'utilisateur: &quot;);</span>
+<span class="nc" id="L190">        String username = scanner.next();</span>
+<span class="nc" id="L191">        System.out.print(&quot;Mot de passe: &quot;);</span>
+<span class="nc" id="L192">        String password = scanner.next();</span>
+
+<span class="nc" id="L194">        currentUser = bankingService.authenticate(username, password);</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        if (currentUser != null) {</span>
+<span class="nc" id="L196">            System.out.println(&quot;Connexion réussie! Bienvenue &quot; + currentUser.getUsername());</span>
+            
+            // Sélectionner automatiquement le premier compte
+<span class="nc" id="L199">            List&lt;Account&gt; userAccounts = bankingService.findAccountsByUser(currentUser);</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">            if (!userAccounts.isEmpty()) {</span>
+<span class="nc" id="L201">                currentAccount = userAccounts.get(0);</span>
+            }
+<span class="nc" id="L203">        } else {</span>
+<span class="nc" id="L204">            System.out.println(&quot;Identifiants incorrects!&quot;);</span>
+        }
+<span class="nc" id="L206">    }</span>
+
+    /**
+     * Inscription d'un nouvel utilisateur.
+     */
+    private void register() {
+<span class="nc" id="L212">        System.out.print(&quot;Nom d'utilisateur: &quot;);</span>
+<span class="nc" id="L213">        String username = scanner.next();</span>
+<span class="nc" id="L214">        System.out.print(&quot;Mot de passe: &quot;);</span>
+<span class="nc" id="L215">        String password = scanner.next();</span>
+<span class="nc" id="L216">        System.out.print(&quot;Email: &quot;);</span>
+<span class="nc" id="L217">        String email = scanner.next();</span>
+<span class="nc" id="L218">        System.out.print(&quot;Dépôt initial: &quot;);</span>
+<span class="nc" id="L219">        double initialDeposit = readDouble();</span>
+
+        try {
+<span class="nc" id="L222">            currentAccount = bankingService.createUserWithAccount(</span>
+                    username, password, email, initialDeposit);
+<span class="nc" id="L224">            currentUser = currentAccount.getOwner();</span>
+<span class="nc" id="L225">            System.out.println(&quot;Compte créé avec succès!&quot;);</span>
+<span class="nc" id="L226">            System.out.println(&quot;ID du compte: &quot; + currentAccount.getId());</span>
+<span class="nc" id="L227">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L228">            System.out.println(&quot;Erreur: &quot; + e.getMessage());</span>
+<span class="nc" id="L229">        }</span>
+<span class="nc" id="L230">    }</span>
+
+    /**
+     * Affiche le solde du compte courant.
+     */
+    private void showBalance() {
+<span class="nc bnc" id="L236" title="All 2 branches missed.">        if (currentAccount == null) {</span>
+<span class="nc" id="L237">            System.out.println(&quot;Aucun compte sélectionné!&quot;);</span>
+<span class="nc" id="L238">            return;</span>
+        }
+<span class="nc" id="L240">        System.out.println(&quot;Solde du compte &quot; + currentAccount.getId() + &quot;: &quot; + </span>
+<span class="nc" id="L241">                String.format(&quot;%.2f&quot;, currentAccount.getBalance()) + &quot;€&quot;);</span>
+<span class="nc" id="L242">    }</span>
+
+    /**
+     * Effectue un dépôt.
+     */
+    private void deposit() {
+<span class="nc bnc" id="L248" title="All 2 branches missed.">        if (currentAccount == null) {</span>
+<span class="nc" id="L249">            System.out.println(&quot;Aucun compte sélectionné!&quot;);</span>
+<span class="nc" id="L250">            return;</span>
+        }
+
+<span class="nc" id="L253">        System.out.print(&quot;Montant à déposer: &quot;);</span>
+<span class="nc" id="L254">        double amount = readDouble();</span>
+
+<span class="nc" id="L256">        Transaction tx = bankingService.deposit(currentAccount.getId(), amount);</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">        if (tx != null) {</span>
+<span class="nc" id="L258">            System.out.println(&quot;Dépôt réussi!&quot;);</span>
+<span class="nc" id="L259">            System.out.println(&quot;Nouveau solde: &quot; + String.format(&quot;%.2f&quot;, currentAccount.getBalance()) + &quot;€&quot;);</span>
+        } else {
+<span class="nc" id="L261">            System.out.println(&quot;Échec du dépôt!&quot;);</span>
+        }
+<span class="nc" id="L263">    }</span>
+
+    /**
+     * Effectue un retrait.
+     */
+    private void withdraw() {
+<span class="nc bnc" id="L269" title="All 2 branches missed.">        if (currentAccount == null) {</span>
+<span class="nc" id="L270">            System.out.println(&quot;Aucun compte sélectionné!&quot;);</span>
+<span class="nc" id="L271">            return;</span>
+        }
+
+<span class="nc" id="L274">        System.out.print(&quot;Montant à retirer: &quot;);</span>
+<span class="nc" id="L275">        double amount = readDouble();</span>
+
+<span class="nc" id="L277">        Transaction tx = bankingService.withdraw(currentAccount.getId(), amount);</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">        if (tx != null) {</span>
+<span class="nc" id="L279">            System.out.println(&quot;Retrait réussi!&quot;);</span>
+<span class="nc" id="L280">            System.out.println(&quot;Nouveau solde: &quot; + String.format(&quot;%.2f&quot;, currentAccount.getBalance()) + &quot;€&quot;);</span>
+        } else {
+<span class="nc" id="L282">            System.out.println(&quot;Échec du retrait! Vérifiez votre solde.&quot;);</span>
+        }
+<span class="nc" id="L284">    }</span>
+
+    /**
+     * Effectue un transfert.
+     */
+    private void transfer() {
+<span class="nc bnc" id="L290" title="All 2 branches missed.">        if (currentAccount == null) {</span>
+<span class="nc" id="L291">            System.out.println(&quot;Aucun compte sélectionné!&quot;);</span>
+<span class="nc" id="L292">            return;</span>
+        }
+
+        // Afficher les comptes disponibles
+<span class="nc" id="L296">        System.out.println(&quot;Comptes disponibles:&quot;);</span>
+<span class="nc bnc" id="L297" title="All 2 branches missed.">        for (Account account : bankingService.getAllAccounts()) {</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">            if (!account.equals(currentAccount)) {</span>
+<span class="nc" id="L299">                System.out.println(&quot;  - &quot; + account.getId() + </span>
+<span class="nc" id="L300">                        &quot; (&quot; + account.getOwner().getUsername() + &quot;)&quot;);</span>
+            }
+<span class="nc" id="L302">        }</span>
+
+<span class="nc" id="L304">        System.out.print(&quot;ID du compte destinataire: &quot;);</span>
+<span class="nc" id="L305">        String toAccountId = scanner.next();</span>
+<span class="nc" id="L306">        System.out.print(&quot;Montant à transférer: &quot;);</span>
+<span class="nc" id="L307">        double amount = readDouble();</span>
+
+        try {
+<span class="nc" id="L310">            Transaction tx = bankingService.transfer(</span>
+<span class="nc" id="L311">                    currentAccount.getId(), toAccountId, amount);</span>
+<span class="nc bnc" id="L312" title="All 2 branches missed.">            if (tx != null) {</span>
+<span class="nc" id="L313">                System.out.println(&quot;Transfert réussi!&quot;);</span>
+<span class="nc" id="L314">                System.out.println(&quot;Nouveau solde: &quot; + </span>
+<span class="nc" id="L315">                        String.format(&quot;%.2f&quot;, currentAccount.getBalance()) + &quot;€&quot;);</span>
+            } else {
+<span class="nc" id="L317">                System.out.println(&quot;Échec du transfert!&quot;);</span>
+            }
+<span class="nc" id="L319">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L320">            System.out.println(&quot;Erreur: &quot; + e.getMessage());</span>
+<span class="nc" id="L321">        }</span>
+<span class="nc" id="L322">    }</span>
+
+    /**
+     * Affiche l'historique des transactions.
+     */
+    private void showHistory() {
+<span class="nc bnc" id="L328" title="All 2 branches missed.">        if (currentAccount == null) {</span>
+<span class="nc" id="L329">            System.out.println(&quot;Aucun compte sélectionné!&quot;);</span>
+<span class="nc" id="L330">            return;</span>
+        }
+
+<span class="nc" id="L333">        List&lt;Transaction&gt; transactions = bankingService.getTransactionHistory(</span>
+<span class="nc" id="L334">                currentAccount.getId());</span>
+        
+<span class="nc bnc" id="L336" title="All 2 branches missed.">        if (transactions.isEmpty()) {</span>
+<span class="nc" id="L337">            System.out.println(&quot;Aucune transaction pour ce compte.&quot;);</span>
+<span class="nc" id="L338">            return;</span>
+        }
+
+<span class="nc" id="L341">        System.out.println(&quot;=== Historique des transactions ===&quot;);</span>
+<span class="nc bnc" id="L342" title="All 2 branches missed.">        for (Transaction tx : transactions) {</span>
+<span class="nc" id="L343">            System.out.println(tx);</span>
+<span class="nc" id="L344">        }</span>
+<span class="nc" id="L345">    }</span>
+
+    /**
+     * Sélectionne un autre compte de l'utilisateur.
+     */
+    private void selectAccount() {
+<span class="nc" id="L351">        List&lt;Account&gt; userAccounts = bankingService.findAccountsByUser(currentUser);</span>
+        
+<span class="nc bnc" id="L353" title="All 2 branches missed.">        if (userAccounts.size() &lt;= 1) {</span>
+<span class="nc" id="L354">            System.out.println(&quot;Vous n'avez qu'un seul compte.&quot;);</span>
+<span class="nc" id="L355">            return;</span>
+        }
+
+<span class="nc" id="L358">        System.out.println(&quot;Vos comptes:&quot;);</span>
+<span class="nc bnc" id="L359" title="All 2 branches missed.">        for (int i = 0; i &lt; userAccounts.size(); i++) {</span>
+<span class="nc" id="L360">            Account acc = userAccounts.get(i);</span>
+<span class="nc" id="L361">            System.out.println((i + 1) + &quot;. &quot; + acc.getId() + </span>
+<span class="nc" id="L362">                    &quot; (Solde: &quot; + String.format(&quot;%.2f&quot;, acc.getBalance()) + &quot;€)&quot;);</span>
+        }
+
+<span class="nc" id="L365">        System.out.print(&quot;Numéro du compte: &quot;);</span>
+<span class="nc" id="L366">        int choice = readInt();</span>
+
+<span class="nc bnc" id="L368" title="All 4 branches missed.">        if (choice &gt;= 1 &amp;&amp; choice &lt;= userAccounts.size()) {</span>
+<span class="nc" id="L369">            currentAccount = userAccounts.get(choice - 1);</span>
+<span class="nc" id="L370">            System.out.println(&quot;Compte &quot; + currentAccount.getId() + &quot; sélectionné.&quot;);</span>
+        } else {
+<span class="nc" id="L372">            System.out.println(&quot;Choix invalide!&quot;);</span>
+        }
+<span class="nc" id="L374">    }</span>
+
+    /**
+     * Crée un nouveau compte pour l'utilisateur connecté.
+     */
+    private void createNewAccount() {
+<span class="nc" id="L380">        System.out.print(&quot;Dépôt initial: &quot;);</span>
+<span class="nc" id="L381">        double initialDeposit = readDouble();</span>
+
+        try {
+<span class="nc" id="L384">            Account newAccount = bankingService.createAccount(currentUser, initialDeposit);</span>
+<span class="nc" id="L385">            currentAccount = newAccount;</span>
+<span class="nc" id="L386">            System.out.println(&quot;Nouveau compte créé: &quot; + newAccount.getId());</span>
+<span class="nc" id="L387">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L388">            System.out.println(&quot;Erreur: &quot; + e.getMessage());</span>
+<span class="nc" id="L389">        }</span>
+<span class="nc" id="L390">    }</span>
+
+    /**
+     * Déconnecte l'utilisateur.
+     */
+    private void logout() {
+<span class="nc" id="L396">        currentUser = null;</span>
+<span class="nc" id="L397">        currentAccount = null;</span>
+<span class="nc" id="L398">        System.out.println(&quot;Déconnexion réussie.&quot;);</span>
+<span class="nc" id="L399">    }</span>
+
+    /**
+     * Lit un entier depuis la console.
+     *
+     * @return L'entier lu ou -1 en cas d'erreur
+     */
+    private int readInt() {
+        try {
+<span class="nc" id="L408">            return scanner.nextInt();</span>
+<span class="nc" id="L409">        } catch (Exception e) {</span>
+<span class="nc" id="L410">            scanner.nextLine(); // Vider le buffer</span>
+<span class="nc" id="L411">            return -1;</span>
+        }
+    }
+
+    /**
+     * Lit un double depuis la console.
+     *
+     * @return Le double lu ou 0 en cas d'erreur
+     */
+    private double readDouble() {
+        try {
+<span class="nc" id="L422">            return scanner.nextDouble();</span>
+<span class="nc" id="L423">        } catch (Exception e) {</span>
+<span class="nc" id="L424">            scanner.nextLine(); // Vider le buffer</span>
+<span class="nc" id="L425">            return 0.0;</span>
+        }
+    }
+
+    /**
+     * Nettoie les ressources.
+     */
+    private void cleanup() {
+<span class="nc" id="L433">        scanner.close();</span>
+<span class="nc" id="L434">    }</span>
+
+    /**
+     * Point d'entrée de l'application.
+     *
+     * @param args Arguments de la ligne de commande
+     */
+    public static void main(String[] args) {
+<span class="nc" id="L442">        MainApp app = new MainApp();</span>
+<span class="nc" id="L443">        app.start();</span>
+<span class="nc" id="L444">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

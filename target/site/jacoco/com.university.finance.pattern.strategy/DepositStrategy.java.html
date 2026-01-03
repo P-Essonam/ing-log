@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DepositStrategy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Finance App Refactoring</a> &gt; <a href="index.source.html" class="el_package">com.university.finance.pattern.strategy</a> &gt; <span class="el_source">DepositStrategy.java</span></div><h1>DepositStrategy.java</h1><pre class="source lang-java linenums">package com.university.finance.pattern.strategy;
+
+import com.university.finance.model.Account;
+import com.university.finance.model.Transaction;
+import com.university.finance.model.Transaction.TransactionType;
+
+import java.util.UUID;
+
+/**
+ * Stratégie de dépôt d'argent sur un compte.
+ * Implémente le pattern Strategy pour les opérations de dépôt.
+ */
+<span class="fc" id="L13">public class DepositStrategy implements TransactionStrategy {</span>
+
+    private static final String TYPE = &quot;DEPOSIT&quot;;
+
+    @Override
+    public Transaction execute(Account account, double amount) {
+<span class="fc bfc" id="L19" title="All 2 branches covered.">        if (!canExecute(account, amount)) {</span>
+<span class="fc" id="L20">            return null;</span>
+        }
+
+        // Créditer le compte
+<span class="fc" id="L24">        boolean success = account.credit(amount);</span>
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">        if (!success) {</span>
+<span class="nc" id="L26">            return null;</span>
+        }
+
+        // Créer la transaction
+<span class="fc" id="L30">        String transactionId = UUID.randomUUID().toString();</span>
+<span class="fc" id="L31">        Transaction transaction = new Transaction(</span>
+                transactionId,
+                TransactionType.DEPOSIT,
+                amount,
+                account,
+<span class="fc" id="L36">                &quot;Dépôt de &quot; + String.format(&quot;%.2f&quot;, amount) + &quot;€&quot;</span>
+        );
+
+        // Ajouter à l'historique du compte
+<span class="fc" id="L40">        account.addTransaction(transaction);</span>
+
+<span class="fc" id="L42">        return transaction;</span>
+    }
+
+    @Override
+    public String getType() {
+<span class="fc" id="L47">        return TYPE;</span>
+    }
+
+    @Override
+    public boolean canExecute(Account account, double amount) {
+        // Un dépôt est valide si le montant est positif et le compte existe
+<span class="fc bfc" id="L53" title="All 4 branches covered.">        return account != null &amp;&amp; amount &gt; 0;</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

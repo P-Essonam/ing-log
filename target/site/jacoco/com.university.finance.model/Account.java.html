@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Account.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Finance App Refactoring</a> &gt; <a href="index.source.html" class="el_package">com.university.finance.model</a> &gt; <span class="el_source">Account.java</span></div><h1>Account.java</h1><pre class="source lang-java linenums">package com.university.finance.model;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * Représente un compte bancaire.
+ * Contient le solde et l'historique des transactions.
+ */
+public class Account {
+    private final String id;
+    private final User owner;
+    private double balance;
+    private final List&lt;Transaction&gt; transactions;
+
+    /**
+     * Constructeur de Account.
+     *
+     * @param id            Identifiant unique du compte
+     * @param owner         Propriétaire du compte
+     * @param initialBalance Solde initial
+     */
+<span class="fc" id="L25">    public Account(String id, User owner, double initialBalance) {</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        if (initialBalance &lt; 0) {</span>
+<span class="fc" id="L27">            throw new IllegalArgumentException(&quot;Le solde initial ne peut pas être négatif&quot;);</span>
+        }
+<span class="fc" id="L29">        this.id = id;</span>
+<span class="fc" id="L30">        this.owner = owner;</span>
+<span class="fc" id="L31">        this.balance = initialBalance;</span>
+<span class="fc" id="L32">        this.transactions = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L33">    }</span>
+
+    // Getters
+    public String getId() {
+<span class="fc" id="L37">        return id;</span>
+    }
+
+    public User getOwner() {
+<span class="fc" id="L41">        return owner;</span>
+    }
+
+    public double getBalance() {
+<span class="fc" id="L45">        return balance;</span>
+    }
+
+    public List&lt;Transaction&gt; getTransactions() {
+<span class="fc" id="L49">        return Collections.unmodifiableList(transactions);</span>
+    }
+
+    /**
+     * Crédite le compte du montant spécifié.
+     *
+     * @param amount Montant à créditer (doit être positif)
+     * @return true si l'opération a réussi
+     */
+    public boolean credit(double amount) {
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (amount &lt;= 0) {</span>
+<span class="fc" id="L60">            return false;</span>
+        }
+<span class="fc" id="L62">        this.balance += amount;</span>
+<span class="fc" id="L63">        return true;</span>
+    }
+
+    /**
+     * Débite le compte du montant spécifié.
+     *
+     * @param amount Montant à débiter (doit être positif et &lt;= solde)
+     * @return true si l'opération a réussi
+     */
+    public boolean debit(double amount) {
+<span class="fc bfc" id="L73" title="All 4 branches covered.">        if (amount &lt;= 0 || amount &gt; this.balance) {</span>
+<span class="fc" id="L74">            return false;</span>
+        }
+<span class="fc" id="L76">        this.balance -= amount;</span>
+<span class="fc" id="L77">        return true;</span>
+    }
+
+    /**
+     * Ajoute une transaction à l'historique.
+     *
+     * @param transaction Transaction à ajouter
+     */
+    public void addTransaction(Transaction transaction) {
+<span class="fc" id="L86">        this.transactions.add(transaction);</span>
+<span class="fc" id="L87">    }</span>
+
+    /**
+     * Vérifie si le compte a suffisamment de fonds.
+     *
+     * @param amount Montant requis
+     * @return true si le solde est suffisant
+     */
+    public boolean hasSufficientFunds(double amount) {
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        return this.balance &gt;= amount;</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        if (this == o) return true;</span>
+<span class="pc bpc" id="L102" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="fc" id="L103">        Account account = (Account) o;</span>
+<span class="fc" id="L104">        return Objects.equals(id, account.id);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L109">        return Objects.hash(id);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L114">        return &quot;Account{&quot; +</span>
+                &quot;id='&quot; + id + '\'' +
+<span class="nc" id="L116">                &quot;, owner=&quot; + owner.getUsername() +</span>
+                &quot;, balance=&quot; + balance +
+                '}';
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
