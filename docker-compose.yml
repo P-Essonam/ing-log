@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  # =========================================================
+  # Application Finance (pour compiler et tester)
+  # =========================================================
+  
+  # Service pour compiler l'application
+  app-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finance-app-build
+    image: finance-app:latest
+    networks:
+      - finance-network
+
+  # Service pour exécuter les tests
+  app-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: finance-app-test
+    volumes:
+      - ./target:/app/target
+      - ./test-reports:/app/target/surefire-reports
+    networks:
+      - finance-network
+
+  # Service Maven interactif (pour développement)
+  maven:
+    image: maven:3.8-openjdk-11
+    container_name: finance-maven
+    working_dir: /app
+    volumes:
+      - .:/app
+      - maven-repo:/root/.m2
+    stdin_open: true
+    tty: true
+    networks:
+      - finance-network
+
+  # =========================================================
+  # Infrastructure CI/CD
+  # =========================================================
+
+  # Jenkins CI Server
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins-finance
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+    networks:
+      - finance-network
+    restart: unless-stopped
+
+  # SonarQube Code Quality Server
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube-finance
+    depends_on:
+      - sonarqube-db
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_JDBC_URL=jdbc:postgresql://sonarqube-db:5432/sonar
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=sonar
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    networks:
+      - finance-network
+    restart: unless-stopped
+
+  # PostgreSQL Database for SonarQube
+  sonarqube-db:
+    image: postgres:13
+    container_name: sonarqube-postgres
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+      - POSTGRES_DB=sonar
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    networks:
+      - finance-network
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:
+    driver: local
+  sonarqube_data:
+    driver: local
+  sonarqube_extensions:
+    driver: local
+  sonarqube_logs:
+    driver: local
+  postgresql_data:
+    driver: local
+  maven-repo:
+    driver: local
+
+networks:
+  finance-network:
+    driver: bridge
+
